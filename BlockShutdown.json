@@ -1,0 +1,16 @@
+{
+  "BlockShutdown": false,
+  "AskForConfirmation": false,
+  "RunInLoop": false,
+  "AggressiveMode": false,
+  "PreventSleep": false,
+  "BlockPowerKeys": false,
+  "AbortLoopInterval": 1000,
+  "KeepAliveInterval": 5000,
+  "PowerStateInterval": 1000,
+  "EmergencyHotkey": "Ctrl+Alt+Shift+S",
+  "EnableEventDirectories": true,
+  "EventDirectoryBase": "Programs",
+  "EnableLogging": false,
+  "LogLevel": "Info"
+} 
