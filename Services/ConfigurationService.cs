@@ -30,6 +30,181 @@ namespace BlockShutdown.Services
             public string LogLevel { get; set; } = "Info";
         }
 
+        public abstract class ConfigEntry
+        {
+            public string Name { get; }
+            public string JsonPropertyName { get; }
+            public string EnvironmentVariable { get; }
+            public string CommandLineArg { get; }
+            public object DefaultValue { get; }
+
+            protected ConfigEntry(string name, string jsonPropertyName, string envVar, string arg, object defaultValue)
+            {
+                Name = name;
+                JsonPropertyName = jsonPropertyName;
+                EnvironmentVariable = envVar;
+                CommandLineArg = arg;
+                DefaultValue = defaultValue;
+            }
+
+            public abstract void SetValue(Configuration config, object value);
+            public abstract object GetValue(Configuration config);
+            public abstract bool IsBoolean { get; }
+        }
+
+        public class BoolConfigEntry : ConfigEntry
+        {
+            public BoolConfigEntry(string name, string jsonPropertyName, string envVar, string arg, bool defaultValue = false)
+                : base(name, jsonPropertyName, envVar, arg, defaultValue)
+            {
+            }
+
+            public override void SetValue(Configuration config, object value)
+            {
+                bool boolValue = ParseBool(value.ToString());
+                switch (Name)
+                {
+                    case "BlockShutdown": config.BlockShutdown = boolValue; break;
+                    case "AskForConfirmation": config.AskForConfirmation = boolValue; break;
+                    case "RunInLoop": config.RunInLoop = boolValue; break;
+                    case "AggressiveMode": config.AggressiveMode = boolValue; break;
+                    case "PreventSleep": config.PreventSleep = boolValue; break;
+                    case "BlockPowerKeys": config.BlockPowerKeys = boolValue; break;
+                    case "EnableEventDirectories": config.EnableEventDirectories = boolValue; break;
+                    case "EnableLogging": config.EnableLogging = boolValue; break;
+                }
+            }
+
+            public override object GetValue(Configuration config)
+            {
+                return Name switch
+                {
+                    "BlockShutdown" => config.BlockShutdown,
+                    "AskForConfirmation" => config.AskForConfirmation,
+                    "RunInLoop" => config.RunInLoop,
+                    "AggressiveMode" => config.AggressiveMode,
+                    "PreventSleep" => config.PreventSleep,
+                    "BlockPowerKeys" => config.BlockPowerKeys,
+                    "EnableEventDirectories" => config.EnableEventDirectories,
+                    "EnableLogging" => config.EnableLogging,
+                    _ => DefaultValue
+                };
+            }
+
+            public override bool IsBoolean => true;
+
+            private static bool ParseBool(string value)
+            {
+                return value?.ToLower() switch
+                {
+                    "true" or "1" or "yes" or "on" => true,
+                    _ => false
+                };
+            }
+        }
+
+        public class IntConfigEntry : ConfigEntry
+        {
+            public IntConfigEntry(string name, string jsonPropertyName, string envVar, string arg, int defaultValue = 0)
+                : base(name, jsonPropertyName, envVar, arg, defaultValue)
+            {
+            }
+
+            public override void SetValue(Configuration config, object value)
+            {
+                int intValue = ParseInt(value.ToString());
+                switch (Name)
+                {
+                    case "AbortLoopInterval": config.AbortLoopInterval = intValue; break;
+                    case "KeepAliveInterval": config.KeepAliveInterval = intValue; break;
+                    case "PowerStateInterval": config.PowerStateInterval = intValue; break;
+                }
+            }
+
+            public override object GetValue(Configuration config)
+            {
+                return Name switch
+                {
+                    "AbortLoopInterval" => config.AbortLoopInterval,
+                    "KeepAliveInterval" => config.KeepAliveInterval,
+                    "PowerStateInterval" => config.PowerStateInterval,
+                    _ => DefaultValue
+                };
+            }
+
+            public override bool IsBoolean => false;
+
+            private static int ParseInt(string value)
+            {
+                return int.TryParse(value, out int result) ? result : 0;
+            }
+        }
+
+        public class StringConfigEntry : ConfigEntry
+        {
+            public StringConfigEntry(string name, string jsonPropertyName, string envVar, string arg, string defaultValue = "")
+                : base(name, jsonPropertyName, envVar, arg, defaultValue)
+            {
+            }
+
+            public override void SetValue(Configuration config, object value)
+            {
+                string stringValue = ParseString(value.ToString());
+                switch (Name)
+                {
+                    case "EmergencyHotkey": config.EmergencyHotkey = stringValue; break;
+                    case "EventDirectoryBase": config.EventDirectoryBase = stringValue; break;
+                    case "LogLevel": config.LogLevel = stringValue; break;
+                }
+            }
+
+            public override object GetValue(Configuration config)
+            {
+                return Name switch
+                {
+                    "EmergencyHotkey" => config.EmergencyHotkey,
+                    "EventDirectoryBase" => config.EventDirectoryBase,
+                    "LogLevel" => config.LogLevel,
+                    _ => DefaultValue
+                };
+            }
+
+            public override bool IsBoolean => false;
+
+            private static string ParseString(string value)
+            {
+                return value ?? "";
+            }
+        }
+
+        private static readonly List<ConfigEntry> ConfigEntries = new()
+        {
+            // Boolean configuration entries
+            new BoolConfigEntry("BlockShutdown", "BlockShutdown", "BLOCKSHUTDOWN_BLOCK", "block", false),
+            new BoolConfigEntry("AskForConfirmation", "AskForConfirmation", "BLOCKSHUTDOWN_ASK", "ask", false),
+            new BoolConfigEntry("RunInLoop", "RunInLoop", "BLOCKSHUTDOWN_LOOP", "loop", false),
+            new BoolConfigEntry("AggressiveMode", "AggressiveMode", "BLOCKSHUTDOWN_AGGRESSIVE", "aggressive", false),
+            new BoolConfigEntry("PreventSleep", "PreventSleep", "BLOCKSHUTDOWN_PREVENT_SLEEP", "prevent-sleep", false),
+            new BoolConfigEntry("BlockPowerKeys", "BlockPowerKeys", "BLOCKSHUTDOWN_BLOCK_POWER_KEYS", "block-power-keys", false),
+            new BoolConfigEntry("EnableEventDirectories", "EnableEventDirectories", "BLOCKSHUTDOWN_ENABLE_EVENT_DIRECTORIES", "enable-events", true),
+            new BoolConfigEntry("EnableLogging", "EnableLogging", "BLOCKSHUTDOWN_ENABLE_LOGGING", "enable-logging", false),
+            
+            // Integer configuration entries
+            new IntConfigEntry("AbortLoopInterval", "AbortLoopInterval", "BLOCKSHUTDOWN_ABORT_INTERVAL", "abort-interval", 1000),
+            new IntConfigEntry("KeepAliveInterval", "KeepAliveInterval", "BLOCKSHUTDOWN_KEEP_ALIVE_INTERVAL", "keep-alive-interval", 5000),
+            new IntConfigEntry("PowerStateInterval", "PowerStateInterval", "BLOCKSHUTDOWN_POWER_STATE_INTERVAL", "power-state-interval", 1000),
+            
+            // String configuration entries
+            new StringConfigEntry("EmergencyHotkey", "EmergencyHotkey", "BLOCKSHUTDOWN_EMERGENCY_HOTKEY", "emergency-hotkey", "Ctrl+Alt+Shift+S"),
+            new StringConfigEntry("EventDirectoryBase", "EventDirectoryBase", "BLOCKSHUTDOWN_EVENT_DIRECTORY_BASE", "event-directory-base", "Programs"),
+            new StringConfigEntry("LogLevel", "LogLevel", "BLOCKSHUTDOWN_LOG_LEVEL", "log-level", "Info")
+            
+            // Example: To add a new configuration entry, simply add it here:
+            // new BoolConfigEntry("NewFeature", "NewFeature", "BLOCKSHUTDOWN_NEW_FEATURE", "new-feature", false),
+            // new IntConfigEntry("NewTimeout", "NewTimeout", "BLOCKSHUTDOWN_NEW_TIMEOUT", "new-timeout", 5000),
+            // new StringConfigEntry("NewPath", "NewPath", "BLOCKSHUTDOWN_NEW_PATH", "new-path", "default"),
+        };
+
         public Configuration LoadConfiguration(string[] commandLineArgs)
         {
             var config = new Configuration();
@@ -61,64 +236,42 @@ namespace BlockShutdown.Services
 
                     if (jsonConfig != null)
                     {
-                        // Only set values that are not default (to allow partial configs)
-                        if (jsonConfig.BlockShutdown) config.BlockShutdown = true;
-                        if (jsonConfig.AskForConfirmation) config.AskForConfirmation = true;
-                        if (jsonConfig.RunInLoop) config.RunInLoop = true;
-                        if (jsonConfig.AggressiveMode) config.AggressiveMode = true;
-                        if (jsonConfig.PreventSleep) config.PreventSleep = true;
-                        if (jsonConfig.BlockPowerKeys) config.BlockPowerKeys = true;
-                        if (jsonConfig.AbortLoopInterval > 0) config.AbortLoopInterval = jsonConfig.AbortLoopInterval;
-                        if (jsonConfig.KeepAliveInterval > 0) config.KeepAliveInterval = jsonConfig.KeepAliveInterval;
-                        if (jsonConfig.PowerStateInterval > 0) config.PowerStateInterval = jsonConfig.PowerStateInterval;
-                        if (!string.IsNullOrEmpty(jsonConfig.EmergencyHotkey)) config.EmergencyHotkey = jsonConfig.EmergencyHotkey;
-                        if (jsonConfig.EnableEventDirectories) config.EnableEventDirectories = true;
-                        if (!string.IsNullOrEmpty(jsonConfig.EventDirectoryBase)) config.EventDirectoryBase = jsonConfig.EventDirectoryBase;
-                        if (jsonConfig.EnableLogging) config.EnableLogging = true;
-                        if (!string.IsNullOrEmpty(jsonConfig.LogLevel)) config.LogLevel = jsonConfig.LogLevel;
+                        // Apply JSON values using ConfigEntries
+                        foreach (var entry in ConfigEntries)
+                        {
+                            var jsonValue = GetJsonPropertyValue(jsonConfig, entry.JsonPropertyName);
+                            if (jsonValue != null)
+                            {
+                                ApplyValue(config, entry, jsonValue);
+                            }
+                        }
                     }
                 }
             }
             catch (Exception ex)
             {
-                // Log error but don't fail - use defaults
                 Console.WriteLine($"Warning: Could not load configuration from {filePath}: {ex.Message}");
             }
+        }
+
+        private object GetJsonPropertyValue(Configuration jsonConfig, string propertyName)
+        {
+            var property = typeof(Configuration).GetProperty(propertyName);
+            return property?.GetValue(jsonConfig);
         }
 
         private void LoadFromEnvironmentVariables(Configuration config)
         {
             try
             {
-                // Boolean settings
-                if (GetEnvironmentVariableBool("BLOCKSHUTDOWN_BLOCK")) config.BlockShutdown = true;
-                if (GetEnvironmentVariableBool("BLOCKSHUTDOWN_ASK")) config.AskForConfirmation = true;
-                if (GetEnvironmentVariableBool("BLOCKSHUTDOWN_LOOP")) config.RunInLoop = true;
-                if (GetEnvironmentVariableBool("BLOCKSHUTDOWN_AGGRESSIVE")) config.AggressiveMode = true;
-                if (GetEnvironmentVariableBool("BLOCKSHUTDOWN_PREVENT_SLEEP")) config.PreventSleep = true;
-                if (GetEnvironmentVariableBool("BLOCKSHUTDOWN_BLOCK_POWER_KEYS")) config.BlockPowerKeys = true;
-                if (GetEnvironmentVariableBool("BLOCKSHUTDOWN_ENABLE_EVENT_DIRECTORIES")) config.EnableEventDirectories = true;
-                if (GetEnvironmentVariableBool("BLOCKSHUTDOWN_ENABLE_LOGGING")) config.EnableLogging = true;
-
-                // Integer settings
-                var abortInterval = GetEnvironmentVariableInt("BLOCKSHUTDOWN_ABORT_INTERVAL");
-                if (abortInterval > 0) config.AbortLoopInterval = abortInterval;
-
-                var keepAliveInterval = GetEnvironmentVariableInt("BLOCKSHUTDOWN_KEEP_ALIVE_INTERVAL");
-                if (keepAliveInterval > 0) config.KeepAliveInterval = keepAliveInterval;
-
-                var powerStateInterval = GetEnvironmentVariableInt("BLOCKSHUTDOWN_POWER_STATE_INTERVAL");
-                if (powerStateInterval > 0) config.PowerStateInterval = powerStateInterval;
-
-                // String settings
-                var emergencyHotkey = Environment.GetEnvironmentVariable("BLOCKSHUTDOWN_EMERGENCY_HOTKEY");
-                if (!string.IsNullOrEmpty(emergencyHotkey)) config.EmergencyHotkey = emergencyHotkey;
-
-                var eventDirectoryBase = Environment.GetEnvironmentVariable("BLOCKSHUTDOWN_EVENT_DIRECTORY_BASE");
-                if (!string.IsNullOrEmpty(eventDirectoryBase)) config.EventDirectoryBase = eventDirectoryBase;
-
-                var logLevel = Environment.GetEnvironmentVariable("BLOCKSHUTDOWN_LOG_LEVEL");
-                if (!string.IsNullOrEmpty(logLevel)) config.LogLevel = logLevel;
+                foreach (var entry in ConfigEntries)
+                {
+                    var envValue = Environment.GetEnvironmentVariable(entry.EnvironmentVariable);
+                    if (!string.IsNullOrEmpty(envValue))
+                    {
+                        ApplyValue(config, entry, envValue);
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -134,58 +287,41 @@ namespace BlockShutdown.Services
             {
                 string lowerArg = arg.ToLower();
                 
-                // Boolean flags
-                if (lowerArg == "/block" || lowerArg == "--block") config.BlockShutdown = true;
-                if (lowerArg == "/ask" || lowerArg == "--ask") config.AskForConfirmation = true;
-                if (lowerArg == "/loop" || lowerArg == "--loop") config.RunInLoop = true;
-                if (lowerArg == "/aggressive" || lowerArg == "--aggressive") config.AggressiveMode = true;
-                if (lowerArg == "/prevent-sleep" || lowerArg == "--prevent-sleep") config.PreventSleep = true;
-                if (lowerArg == "/block-power-keys" || lowerArg == "--block-power-keys") config.BlockPowerKeys = true;
-                if (lowerArg == "/enable-events" || lowerArg == "--enable-events") config.EnableEventDirectories = true;
-                if (lowerArg == "/enable-logging" || lowerArg == "--enable-logging") config.EnableLogging = true;
-
-                // Key-value pairs
-                if (lowerArg.StartsWith("/abort-interval=") || lowerArg.StartsWith("--abort-interval="))
+                // Check for boolean flags
+                foreach (var entry in ConfigEntries.Where(e => e.IsBoolean))
                 {
-                    var value = ExtractValue(arg);
-                    if (int.TryParse(value, out int interval) && interval > 0)
-                        config.AbortLoopInterval = interval;
+                    if (lowerArg == $"/{entry.CommandLineArg}" || lowerArg == $"--{entry.CommandLineArg}")
+                    {
+                        entry.SetValue(config, true);
+                        break;
+                    }
                 }
 
-                if (lowerArg.StartsWith("/keep-alive-interval=") || lowerArg.StartsWith("--keep-alive-interval="))
+                // Check for key-value pairs
+                foreach (var entry in ConfigEntries)
                 {
-                    var value = ExtractValue(arg);
-                    if (int.TryParse(value, out int interval) && interval > 0)
-                        config.KeepAliveInterval = interval;
+                    if (lowerArg.StartsWith($"/{entry.CommandLineArg}=") || lowerArg.StartsWith($"--{entry.CommandLineArg}="))
+                    {
+                        var value = ExtractValue(arg);
+                        if (!string.IsNullOrEmpty(value))
+                        {
+                            ApplyValue(config, entry, value);
+                        }
+                        break;
+                    }
                 }
+            }
+        }
 
-                if (lowerArg.StartsWith("/power-state-interval=") || lowerArg.StartsWith("--power-state-interval="))
-                {
-                    var value = ExtractValue(arg);
-                    if (int.TryParse(value, out int interval) && interval > 0)
-                        config.PowerStateInterval = interval;
-                }
-
-                if (lowerArg.StartsWith("/emergency-hotkey=") || lowerArg.StartsWith("--emergency-hotkey="))
-                {
-                    var value = ExtractValue(arg);
-                    if (!string.IsNullOrEmpty(value))
-                        config.EmergencyHotkey = value;
-                }
-
-                if (lowerArg.StartsWith("/event-directory-base=") || lowerArg.StartsWith("--event-directory-base="))
-                {
-                    var value = ExtractValue(arg);
-                    if (!string.IsNullOrEmpty(value))
-                        config.EventDirectoryBase = value;
-                }
-
-                if (lowerArg.StartsWith("/log-level=") || lowerArg.StartsWith("--log-level="))
-                {
-                    var value = ExtractValue(arg);
-                    if (!string.IsNullOrEmpty(value))
-                        config.LogLevel = value;
-                }
+        private void ApplyValue(Configuration config, ConfigEntry entry, object value)
+        {
+            try
+            {
+                entry.SetValue(config, value);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Warning: Could not apply value {value} to {entry.Name}: {ex.Message}");
             }
         }
 
@@ -193,26 +329,6 @@ namespace BlockShutdown.Services
         {
             var equalIndex = arg.IndexOf('=');
             return equalIndex >= 0 ? arg.Substring(equalIndex + 1) : string.Empty;
-        }
-
-        private bool GetEnvironmentVariableBool(string name)
-        {
-            var value = Environment.GetEnvironmentVariable(name);
-            if (string.IsNullOrEmpty(value)) return false;
-            
-            return value.ToLower() switch
-            {
-                "true" or "1" or "yes" or "on" => true,
-                _ => false
-            };
-        }
-
-        private int GetEnvironmentVariableInt(string name)
-        {
-            var value = Environment.GetEnvironmentVariable(name);
-            if (string.IsNullOrEmpty(value)) return 0;
-            
-            return int.TryParse(value, out int result) ? result : 0;
         }
 
         public void SaveConfiguration(Configuration config, string filePath = null)
@@ -246,25 +362,13 @@ namespace BlockShutdown.Services
 
         public void CreateDefaultConfiguration()
         {
-            var defaultConfig = new Configuration
-            {
-                BlockShutdown = false,
-                AskForConfirmation = false,
-                RunInLoop = false,
-                AggressiveMode = false,
-                PreventSleep = false,
-                BlockPowerKeys = false,
-                AbortLoopInterval = 1000,
-                KeepAliveInterval = 5000,
-                PowerStateInterval = 1000,
-                EmergencyHotkey = "Ctrl+Alt+Shift+S",
-                EnableEventDirectories = true,
-                EventDirectoryBase = "Programs",
-                EnableLogging = false,
-                LogLevel = "Info"
-            };
-
+            var defaultConfig = new Configuration();
             SaveConfiguration(defaultConfig);
+        }
+
+        public List<ConfigEntry> GetConfigEntries()
+        {
+            return ConfigEntries.ToList();
         }
     }
 } 
