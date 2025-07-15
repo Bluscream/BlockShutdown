@@ -13,7 +13,7 @@ namespace BlockShutdown
             Application.SetCompatibleTextRenderingDefault(false);
 
             // Load configuration with priority: Command Line > Environment Variables > JSON files
-            var configService = new ConfigurationService();
+            var configService = new ConfigurationService<Configuration>("BlockShutdown.json", Configuration.GetConfigEntries());
             var config = configService.LoadConfiguration(args);
 
             // Create and start the shutdown blocking service with configuration

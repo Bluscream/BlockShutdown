@@ -6,28 +6,19 @@ using System.Linq;
 
 namespace BlockShutdown.Services
 {
-    public class ConfigurationService
+    public class ConfigurationService<T> where T : class, new()
     {
-        private static readonly string ConfigFileName = "BlockShutdown.json";
-        private static readonly string AppDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        private static readonly string ProgramFolder = AppDomain.CurrentDomain.BaseDirectory;
+        private readonly string _configFileName;
+        private readonly string _appDataFolder;
+        private readonly string _programFolder;
+        private readonly List<ConfigEntry> _configEntries;
 
-        public class Configuration
+        public ConfigurationService(string configFileName, List<ConfigEntry> configEntries)
         {
-            public bool BlockShutdown { get; set; } = false;
-            public bool AskForConfirmation { get; set; } = false;
-            public bool RunInLoop { get; set; } = false;
-            public bool AggressiveMode { get; set; } = false;
-            public bool PreventSleep { get; set; } = false;
-            public bool BlockPowerKeys { get; set; } = false;
-            public int AbortLoopInterval { get; set; } = 1000; // milliseconds
-            public int KeepAliveInterval { get; set; } = 5000; // milliseconds
-            public int PowerStateInterval { get; set; } = 1000; // milliseconds
-            public string EmergencyHotkey { get; set; } = "Ctrl+Alt+Shift+S";
-            public bool EnableEventDirectories { get; set; } = true;
-            public string EventDirectoryBase { get; set; } = "Programs";
-            public bool EnableLogging { get; set; } = false;
-            public string LogLevel { get; set; } = "Info";
+            _configFileName = configFileName;
+            _appDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            _programFolder = AppDomain.CurrentDomain.BaseDirectory;
+            _configEntries = configEntries;
         }
 
         public abstract class ConfigEntry
@@ -47,8 +38,8 @@ namespace BlockShutdown.Services
                 DefaultValue = defaultValue;
             }
 
-            public abstract void SetValue(Configuration config, object value);
-            public abstract object GetValue(Configuration config);
+            public abstract void SetValue(T config, object value);
+            public abstract object GetValue(T config);
             public abstract bool IsBoolean { get; }
         }
 
@@ -59,36 +50,20 @@ namespace BlockShutdown.Services
             {
             }
 
-            public override void SetValue(Configuration config, object value)
+            public override void SetValue(T config, object value)
             {
                 bool boolValue = ParseBool(value.ToString());
-                switch (Name)
+                var property = typeof(T).GetProperty(Name);
+                if (property != null && property.PropertyType == typeof(bool))
                 {
-                    case "BlockShutdown": config.BlockShutdown = boolValue; break;
-                    case "AskForConfirmation": config.AskForConfirmation = boolValue; break;
-                    case "RunInLoop": config.RunInLoop = boolValue; break;
-                    case "AggressiveMode": config.AggressiveMode = boolValue; break;
-                    case "PreventSleep": config.PreventSleep = boolValue; break;
-                    case "BlockPowerKeys": config.BlockPowerKeys = boolValue; break;
-                    case "EnableEventDirectories": config.EnableEventDirectories = boolValue; break;
-                    case "EnableLogging": config.EnableLogging = boolValue; break;
+                    property.SetValue(config, boolValue);
                 }
             }
 
-            public override object GetValue(Configuration config)
+            public override object GetValue(T config)
             {
-                return Name switch
-                {
-                    "BlockShutdown" => config.BlockShutdown,
-                    "AskForConfirmation" => config.AskForConfirmation,
-                    "RunInLoop" => config.RunInLoop,
-                    "AggressiveMode" => config.AggressiveMode,
-                    "PreventSleep" => config.PreventSleep,
-                    "BlockPowerKeys" => config.BlockPowerKeys,
-                    "EnableEventDirectories" => config.EnableEventDirectories,
-                    "EnableLogging" => config.EnableLogging,
-                    _ => DefaultValue
-                };
+                var property = typeof(T).GetProperty(Name);
+                return property?.GetValue(config) ?? DefaultValue;
             }
 
             public override bool IsBoolean => true;
@@ -110,26 +85,20 @@ namespace BlockShutdown.Services
             {
             }
 
-            public override void SetValue(Configuration config, object value)
+            public override void SetValue(T config, object value)
             {
                 int intValue = ParseInt(value.ToString());
-                switch (Name)
+                var property = typeof(T).GetProperty(Name);
+                if (property != null && property.PropertyType == typeof(int))
                 {
-                    case "AbortLoopInterval": config.AbortLoopInterval = intValue; break;
-                    case "KeepAliveInterval": config.KeepAliveInterval = intValue; break;
-                    case "PowerStateInterval": config.PowerStateInterval = intValue; break;
+                    property.SetValue(config, intValue);
                 }
             }
 
-            public override object GetValue(Configuration config)
+            public override object GetValue(T config)
             {
-                return Name switch
-                {
-                    "AbortLoopInterval" => config.AbortLoopInterval,
-                    "KeepAliveInterval" => config.KeepAliveInterval,
-                    "PowerStateInterval" => config.PowerStateInterval,
-                    _ => DefaultValue
-                };
+                var property = typeof(T).GetProperty(Name);
+                return property?.GetValue(config) ?? DefaultValue;
             }
 
             public override bool IsBoolean => false;
@@ -147,26 +116,20 @@ namespace BlockShutdown.Services
             {
             }
 
-            public override void SetValue(Configuration config, object value)
+            public override void SetValue(T config, object value)
             {
                 string stringValue = ParseString(value.ToString());
-                switch (Name)
+                var property = typeof(T).GetProperty(Name);
+                if (property != null && property.PropertyType == typeof(string))
                 {
-                    case "EmergencyHotkey": config.EmergencyHotkey = stringValue; break;
-                    case "EventDirectoryBase": config.EventDirectoryBase = stringValue; break;
-                    case "LogLevel": config.LogLevel = stringValue; break;
+                    property.SetValue(config, stringValue);
                 }
             }
 
-            public override object GetValue(Configuration config)
+            public override object GetValue(T config)
             {
-                return Name switch
-                {
-                    "EmergencyHotkey" => config.EmergencyHotkey,
-                    "EventDirectoryBase" => config.EventDirectoryBase,
-                    "LogLevel" => config.LogLevel,
-                    _ => DefaultValue
-                };
+                var property = typeof(T).GetProperty(Name);
+                return property?.GetValue(config) ?? DefaultValue;
             }
 
             public override bool IsBoolean => false;
@@ -177,41 +140,15 @@ namespace BlockShutdown.Services
             }
         }
 
-        private static readonly List<ConfigEntry> ConfigEntries = new()
-        {
-            // Boolean configuration entries
-            new BoolConfigEntry("BlockShutdown", "BlockShutdown", "BLOCKSHUTDOWN_BLOCK", "block", false),
-            new BoolConfigEntry("AskForConfirmation", "AskForConfirmation", "BLOCKSHUTDOWN_ASK", "ask", false),
-            new BoolConfigEntry("RunInLoop", "RunInLoop", "BLOCKSHUTDOWN_LOOP", "loop", false),
-            new BoolConfigEntry("AggressiveMode", "AggressiveMode", "BLOCKSHUTDOWN_AGGRESSIVE", "aggressive", false),
-            new BoolConfigEntry("PreventSleep", "PreventSleep", "BLOCKSHUTDOWN_PREVENT_SLEEP", "prevent-sleep", false),
-            new BoolConfigEntry("BlockPowerKeys", "BlockPowerKeys", "BLOCKSHUTDOWN_BLOCK_POWER_KEYS", "block-power-keys", false),
-            new BoolConfigEntry("EnableEventDirectories", "EnableEventDirectories", "BLOCKSHUTDOWN_ENABLE_EVENT_DIRECTORIES", "enable-events", true),
-            new BoolConfigEntry("EnableLogging", "EnableLogging", "BLOCKSHUTDOWN_ENABLE_LOGGING", "enable-logging", false),
-            
-            // Integer configuration entries
-            new IntConfigEntry("AbortLoopInterval", "AbortLoopInterval", "BLOCKSHUTDOWN_ABORT_INTERVAL", "abort-interval", 1000),
-            new IntConfigEntry("KeepAliveInterval", "KeepAliveInterval", "BLOCKSHUTDOWN_KEEP_ALIVE_INTERVAL", "keep-alive-interval", 5000),
-            new IntConfigEntry("PowerStateInterval", "PowerStateInterval", "BLOCKSHUTDOWN_POWER_STATE_INTERVAL", "power-state-interval", 1000),
-            
-            // String configuration entries
-            new StringConfigEntry("EmergencyHotkey", "EmergencyHotkey", "BLOCKSHUTDOWN_EMERGENCY_HOTKEY", "emergency-hotkey", "Ctrl+Alt+Shift+S"),
-            new StringConfigEntry("EventDirectoryBase", "EventDirectoryBase", "BLOCKSHUTDOWN_EVENT_DIRECTORY_BASE", "event-directory-base", "Programs"),
-            new StringConfigEntry("LogLevel", "LogLevel", "BLOCKSHUTDOWN_LOG_LEVEL", "log-level", "Info")
-            
-            // Example: To add a new configuration entry, simply add it here:
-            // new BoolConfigEntry("NewFeature", "NewFeature", "BLOCKSHUTDOWN_NEW_FEATURE", "new-feature", false),
-            // new IntConfigEntry("NewTimeout", "NewTimeout", "BLOCKSHUTDOWN_NEW_TIMEOUT", "new-timeout", 5000),
-            // new StringConfigEntry("NewPath", "NewPath", "BLOCKSHUTDOWN_NEW_PATH", "new-path", "default"),
-        };
 
-        public Configuration LoadConfiguration(string[] commandLineArgs)
+
+        public T LoadConfiguration(string[] commandLineArgs)
         {
-            var config = new Configuration();
+            var config = new T();
 
             // Load from JSON files (lowest priority first)
-            LoadFromJsonFile(config, Path.Combine(ProgramFolder, ConfigFileName));
-            LoadFromJsonFile(config, Path.Combine(AppDataFolder, ConfigFileName));
+            LoadFromJsonFile(config, Path.Combine(_programFolder, _configFileName));
+            LoadFromJsonFile(config, Path.Combine(_appDataFolder, _configFileName));
 
             // Load from environment variables (higher priority)
             LoadFromEnvironmentVariables(config);
@@ -222,14 +159,14 @@ namespace BlockShutdown.Services
             return config;
         }
 
-        private void LoadFromJsonFile(Configuration config, string filePath)
+        private void LoadFromJsonFile(T config, string filePath)
         {
             try
             {
                 if (File.Exists(filePath))
                 {
                     var jsonContent = File.ReadAllText(filePath);
-                    var jsonConfig = JsonSerializer.Deserialize<Configuration>(jsonContent, new JsonSerializerOptions
+                    var jsonConfig = JsonSerializer.Deserialize<T>(jsonContent, new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true
                     });
@@ -237,7 +174,7 @@ namespace BlockShutdown.Services
                     if (jsonConfig != null)
                     {
                         // Apply JSON values using ConfigEntries
-                        foreach (var entry in ConfigEntries)
+                        foreach (var entry in _configEntries)
                         {
                             var jsonValue = GetJsonPropertyValue(jsonConfig, entry.JsonPropertyName);
                             if (jsonValue != null)
@@ -254,17 +191,17 @@ namespace BlockShutdown.Services
             }
         }
 
-        private object GetJsonPropertyValue(Configuration jsonConfig, string propertyName)
+        private object GetJsonPropertyValue(T jsonConfig, string propertyName)
         {
-            var property = typeof(Configuration).GetProperty(propertyName);
+            var property = typeof(T).GetProperty(propertyName);
             return property?.GetValue(jsonConfig);
         }
 
-        private void LoadFromEnvironmentVariables(Configuration config)
+        private void LoadFromEnvironmentVariables(T config)
         {
             try
             {
-                foreach (var entry in ConfigEntries)
+                foreach (var entry in _configEntries)
                 {
                     var envValue = Environment.GetEnvironmentVariable(entry.EnvironmentVariable);
                     if (!string.IsNullOrEmpty(envValue))
@@ -279,7 +216,7 @@ namespace BlockShutdown.Services
             }
         }
 
-        private void LoadFromCommandLineArgs(Configuration config, string[] args)
+        private void LoadFromCommandLineArgs(T config, string[] args)
         {
             if (args == null) return;
 
@@ -288,7 +225,7 @@ namespace BlockShutdown.Services
                 string lowerArg = arg.ToLower();
                 
                 // Check for boolean flags
-                foreach (var entry in ConfigEntries.Where(e => e.IsBoolean))
+                foreach (var entry in _configEntries.Where(e => e.IsBoolean))
                 {
                     if (lowerArg == $"/{entry.CommandLineArg}" || lowerArg == $"--{entry.CommandLineArg}")
                     {
@@ -298,7 +235,7 @@ namespace BlockShutdown.Services
                 }
 
                 // Check for key-value pairs
-                foreach (var entry in ConfigEntries)
+                foreach (var entry in _configEntries)
                 {
                     if (lowerArg.StartsWith($"/{entry.CommandLineArg}=") || lowerArg.StartsWith($"--{entry.CommandLineArg}="))
                     {
@@ -313,7 +250,7 @@ namespace BlockShutdown.Services
             }
         }
 
-        private void ApplyValue(Configuration config, ConfigEntry entry, object value)
+        private void ApplyValue(T config, ConfigEntry entry, object value)
         {
             try
             {
@@ -331,13 +268,13 @@ namespace BlockShutdown.Services
             return equalIndex >= 0 ? arg.Substring(equalIndex + 1) : string.Empty;
         }
 
-        public void SaveConfiguration(Configuration config, string filePath = null)
+        public void SaveConfiguration(T config, string filePath = null)
         {
             try
             {
                 if (string.IsNullOrEmpty(filePath))
                 {
-                    filePath = Path.Combine(AppDataFolder, ConfigFileName);
+                    filePath = Path.Combine(_appDataFolder, _configFileName);
                 }
 
                 var directory = Path.GetDirectoryName(filePath);
@@ -362,13 +299,13 @@ namespace BlockShutdown.Services
 
         public void CreateDefaultConfiguration()
         {
-            var defaultConfig = new Configuration();
+            var defaultConfig = new T();
             SaveConfiguration(defaultConfig);
         }
 
         public List<ConfigEntry> GetConfigEntries()
         {
-            return ConfigEntries.ToList();
+            return _configEntries.ToList();
         }
     }
 } 

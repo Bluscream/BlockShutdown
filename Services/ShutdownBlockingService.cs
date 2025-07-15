@@ -141,11 +141,11 @@ namespace BlockShutdown.Services
             public IntPtr dwExtraInfo;
         }
 
-        private ConfigurationService.Configuration _config;
+        private Configuration _config;
 
-        public ShutdownBlockingService(ConfigurationService.Configuration config)
+        public ShutdownBlockingService(Configuration config)
         {
-            _config = config ?? new ConfigurationService.Configuration();
+            _config = config ?? new Configuration();
             _blockShutdown = _config.BlockShutdown;
             _askForConfirmation = _config.AskForConfirmation;
             _runInLoop = _config.RunInLoop;
@@ -576,7 +576,7 @@ namespace BlockShutdown.Services
                 _config.PreventSleep = _preventSleep;
                 _config.BlockPowerKeys = _blockPowerKeys;
 
-                var configService = new ConfigurationService();
+                var configService = new ConfigurationService<Configuration>("BlockShutdown.json", Configuration.GetConfigEntries());
                 configService.SaveConfiguration(_config);
 
                 MessageBox.Show("Configuration saved successfully!", "Success", 
