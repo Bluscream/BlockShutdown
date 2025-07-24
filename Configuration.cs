@@ -20,6 +20,7 @@ namespace BlockShutdown
         public string EventDirectoryBase { get; set; } = "Programs";
         public bool EnableLogging { get; set; } = false;
         public string LogLevel { get; set; } = "Info";
+        public bool Elevate { get; set; } = false;
 
         public static List<ConfigurationService<Configuration>.ConfigEntry> GetConfigEntries()
         {
@@ -34,6 +35,7 @@ namespace BlockShutdown
                 new ConfigurationService<Configuration>.BoolConfigEntry("BlockPowerKeys", "BlockPowerKeys", "BLOCKSHUTDOWN_BLOCK_POWER_KEYS", "block-power-keys", false),
                 new ConfigurationService<Configuration>.BoolConfigEntry("EnableEventDirectories", "EnableEventDirectories", "BLOCKSHUTDOWN_ENABLE_EVENT_DIRECTORIES", "enable-events", false),
                 new ConfigurationService<Configuration>.BoolConfigEntry("EnableLogging", "EnableLogging", "BLOCKSHUTDOWN_ENABLE_LOGGING", "enable-logging", false),
+                new ConfigurationService<Configuration>.BoolConfigEntry("Elevate", "Elevate", "BLOCKSHUTDOWN_ELEVATE", "elevate", false),
                 
                 // Integer configuration entries
                 new ConfigurationService<Configuration>.IntConfigEntry("AbortLoopInterval", "AbortLoopInterval", "BLOCKSHUTDOWN_ABORT_INTERVAL", "abort-interval", 1000),

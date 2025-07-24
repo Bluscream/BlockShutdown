@@ -12,5 +12,6 @@
   "EnableEventDirectories": true,
   "EventDirectoryBase": "Programs",
   "EnableLogging": false,
-  "LogLevel": "Info"
+  "LogLevel": "Info",
+  "Elevate": false
 } 

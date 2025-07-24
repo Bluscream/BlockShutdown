@@ -34,6 +34,7 @@ The application supports multiple configuration sources with the following prior
 - `/block-power-keys` or `--block-power-keys` - Block power-related keyboard shortcuts
 - `/enable-events` or `--enable-events` - Enable event directory execution
 - `/enable-logging` or `--enable-logging` - Enable logging
+- `/elevate` or `--elevate` - Request elevation (run as administrator) on startup
 
 #### Key-Value Arguments
 - `/abort-interval=1000` or `--abort-interval=1000` - Set abort loop interval (ms)
@@ -59,6 +60,7 @@ set BLOCKSHUTDOWN_PREVENT_SLEEP=true
 set BLOCKSHUTDOWN_BLOCK_POWER_KEYS=true
 set BLOCKSHUTDOWN_ENABLE_EVENT_DIRECTORIES=true
 set BLOCKSHUTDOWN_ENABLE_LOGGING=true
+set BLOCKSHUTDOWN_ELEVATE=true
 
 # Integer settings
 set BLOCKSHUTDOWN_ABORT_INTERVAL=1000
@@ -90,7 +92,8 @@ Create `BlockShutdown.json` in either the program folder or `%APPDATA%`:
   "EnableEventDirectories": true,
   "EventDirectoryBase": "Programs",
   "EnableLogging": false,
-  "LogLevel": "Info"
+  "LogLevel": "Info",
+  "Elevate": false
 }
 ```
 
