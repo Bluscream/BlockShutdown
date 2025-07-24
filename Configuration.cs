@@ -16,7 +16,7 @@ namespace BlockShutdown
         public int KeepAliveInterval { get; set; } = 5000; // milliseconds
         public int PowerStateInterval { get; set; } = 1000; // milliseconds
         public string EmergencyHotkey { get; set; } = "Ctrl+Alt+Shift+S";
-        public bool EnableEventDirectories { get; set; } = true;
+        public bool EnableEventDirectories { get; set; } = false;
         public string EventDirectoryBase { get; set; } = "Programs";
         public bool EnableLogging { get; set; } = false;
         public string LogLevel { get; set; } = "Info";
@@ -32,7 +32,7 @@ namespace BlockShutdown
                 new ConfigurationService<Configuration>.BoolConfigEntry("AggressiveMode", "AggressiveMode", "BLOCKSHUTDOWN_AGGRESSIVE", "aggressive", false),
                 new ConfigurationService<Configuration>.BoolConfigEntry("PreventSleep", "PreventSleep", "BLOCKSHUTDOWN_PREVENT_SLEEP", "prevent-sleep", false),
                 new ConfigurationService<Configuration>.BoolConfigEntry("BlockPowerKeys", "BlockPowerKeys", "BLOCKSHUTDOWN_BLOCK_POWER_KEYS", "block-power-keys", false),
-                new ConfigurationService<Configuration>.BoolConfigEntry("EnableEventDirectories", "EnableEventDirectories", "BLOCKSHUTDOWN_ENABLE_EVENT_DIRECTORIES", "enable-events", true),
+                new ConfigurationService<Configuration>.BoolConfigEntry("EnableEventDirectories", "EnableEventDirectories", "BLOCKSHUTDOWN_ENABLE_EVENT_DIRECTORIES", "enable-events", false),
                 new ConfigurationService<Configuration>.BoolConfigEntry("EnableLogging", "EnableLogging", "BLOCKSHUTDOWN_ENABLE_LOGGING", "enable-logging", false),
                 
                 // Integer configuration entries

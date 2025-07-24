@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
@@ -13,11 +12,10 @@
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
     <FileVersion>1.0.0.0</FileVersion>
     <ApplicationIcon>BlockShutdown.ico</ApplicationIcon>
+    <Version>1.0.0.0</Version>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="System.Drawing.Common" Version="8.0.0" />
     <None Include="BlockShutdown.ico" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
-
-</Project> 
+</Project>

@@ -142,6 +142,7 @@ namespace BlockShutdown.Services
         }
 
         private Configuration _config;
+        private EventDirectoryManager _eventDirectoryManager;
 
         public ShutdownBlockingService(Configuration config)
         {
@@ -153,6 +154,9 @@ namespace BlockShutdown.Services
             _preventSleep = _config.PreventSleep;
             _blockPowerKeys = _config.BlockPowerKeys;
             _cancellationTokenSource = new CancellationTokenSource();
+            _eventDirectoryManager = new EventDirectoryManager();
+            if (_config.EnableEventDirectories)
+                _eventDirectoryManager.Initialize();
 
             InitializeComponent();
             SetupShutdownHandling();
@@ -686,7 +690,8 @@ namespace BlockShutdown.Services
         public bool HandleShutdownEvent(uint wParam, uint lParam)
         {
             string eventType = "Unknown";
-            if ((lParam & ENDSESSION_LOGOFF) != 0)
+            bool isLogoff = (lParam & ENDSESSION_LOGOFF) != 0;
+            if (isLogoff)
             {
                 eventType = "Logoff";
             }
@@ -695,11 +700,23 @@ namespace BlockShutdown.Services
                 eventType = "Shutdown";
             }
 
-            ExecuteEventDirectory($"{eventType}Request");
+            if (_config.EnableEventDirectories)
+            {
+                if (isLogoff)
+                    _eventDirectoryManager.ExecuteEvent("LogoffRequested");
+                else
+                    _eventDirectoryManager.ExecuteEvent("ShutdownRequested");
+            }
 
             if (!_blockShutdown)
             {
-                ExecuteEventDirectory(eventType);
+                if (_config.EnableEventDirectories)
+                {
+                    if (isLogoff)
+                        _eventDirectoryManager.ExecuteEvent("LogoffRequestAccepted");
+                    else
+                        _eventDirectoryManager.ExecuteEvent("ShutdownRequestAccepted");
+                }
                 return true; // Allow shutdown
             }
 
@@ -729,17 +746,35 @@ namespace BlockShutdown.Services
                         MessageBox.Show($"Error stopping shutdown block: {ex.Message}", "Error", 
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
-                    ExecuteEventDirectory(eventType);
+                    if (_config.EnableEventDirectories)
+                    {
+                        if (isLogoff)
+                            _eventDirectoryManager.ExecuteEvent("LogoffRequestAccepted");
+                        else
+                            _eventDirectoryManager.ExecuteEvent("ShutdownRequestAccepted");
+                    }
                     return true; // Allow shutdown
                 }
                 else
                 {
-                    ExecuteEventDirectory($"{eventType}Block");
+                    if (_config.EnableEventDirectories)
+                    {
+                        if (isLogoff)
+                            _eventDirectoryManager.ExecuteEvent("LogoffRequestBlocked");
+                        else
+                            _eventDirectoryManager.ExecuteEvent("ShutdownRequestBlocked");
+                    }
                     return false; // Block shutdown
                 }
             }
 
-            ExecuteEventDirectory($"{eventType}Block");
+            if (_config.EnableEventDirectories)
+            {
+                if (isLogoff)
+                    _eventDirectoryManager.ExecuteEvent("LogoffRequestBlocked");
+                else
+                    _eventDirectoryManager.ExecuteEvent("ShutdownRequestBlocked");
+            }
             return false; // Block shutdown
         }
 
@@ -1056,64 +1091,6 @@ namespace BlockShutdown.Services
             }
 
             ShutdownBlockReasonDestroy(hwnd);
-        }
-
-        private void ExecuteEventDirectory(string eventName)
-        {
-            if (!_config.EnableEventDirectories)
-                return;
-
-            try
-            {
-                string baseDir = Environment.GetFolderPath(Environment.SpecialFolder.Programs);
-                if (!string.IsNullOrEmpty(_config.EventDirectoryBase))
-                {
-                    baseDir = Path.Combine(baseDir, _config.EventDirectoryBase);
-                }
-                
-                string eventDir = Path.Combine(baseDir, eventName);
-                
-                if (!Directory.Exists(eventDir))
-                {
-                    Directory.CreateDirectory(eventDir);
-                    if (_config.EnableLogging)
-                    {
-                        Debug.WriteLine($"Created event directory: {eventDir}");
-                    }
-                }
-                else
-                {
-                    foreach (string file in Directory.GetFiles(eventDir))
-                    {
-                        try
-                        {
-                            Process.Start(new ProcessStartInfo
-                            {
-                                FileName = file,
-                                UseShellExecute = true
-                            });
-                            if (_config.EnableLogging)
-                            {
-                                Debug.WriteLine($"Executed: {file}");
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            if (_config.EnableLogging)
-                            {
-                                Debug.WriteLine($"Error executing {file}: {ex.Message}");
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                if (_config.EnableLogging)
-                {
-                    Debug.WriteLine($"Error in ExecuteEventDirectory: {ex.Message}");
-                }
-            }
         }
 
         protected override void Dispose(bool disposing)
