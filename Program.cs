@@ -1,9 +1,8 @@
 using System;
 using System.Windows.Forms;
-using BlockShutdown.Services;
 using System.Security.Principal;
 using System.Diagnostics;
-using Utils;
+using static Utils;
 
 namespace BlockShutdown
 {
