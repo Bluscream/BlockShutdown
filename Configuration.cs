@@ -6,8 +6,8 @@ namespace BlockShutdown
 {
     public class Configuration
     {
-        public bool BlockShutdown { get; set; } = false;
-        public bool AskForConfirmation { get; set; } = false;
+        public bool BlockShutdown { get; set; } = true;
+        public bool AskForConfirmation { get; set; } = true;
         public bool RunInLoop { get; set; } = false;
         public bool AggressiveMode { get; set; } = false;
         public bool PreventSleep { get; set; } = false;
@@ -16,7 +16,7 @@ namespace BlockShutdown
         public int KeepAliveInterval { get; set; } = 5000; // milliseconds
         public int PowerStateInterval { get; set; } = 1000; // milliseconds
         public string EmergencyHotkey { get; set; } = "Ctrl+Alt+Shift+S";
-        public bool EnableEventDirectories { get; set; } = false;
+        public bool EnableEventDirectories { get; set; } = true;
         public string EventDirectoryBase { get; set; } = "Programs";
         public bool EnableLogging { get; set; } = false;
         public string LogLevel { get; set; } = "Info";
